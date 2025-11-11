@@ -1,0 +1,23 @@
+{
+  "name": "mam-system-server",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "seed": "node src/seed/adminSeed.js",
+    "backfill:membershipIds": "node src/seed/backfillMembershipIds.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mam-system-root": "file:..",
+    "mongoose": "^7.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
