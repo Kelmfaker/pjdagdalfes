@@ -1,0 +1,185 @@
+<%- include('partials/head', { title: 'لوحة التحكم' }) %>
+<%- include('partials/header') %>
+
+  <%- include('partials/card-open', { title: 'إدارة الأعضاء' }) %>
+
+    <% if (user && (user.role === 'admin' || user.role === 'secretary')) { %>
+      <button class="btn btn-add" onclick="openMemberAdd()">إضافة عضو جديد</button>
+    <% } else { %>
+      <button class="btn btn-add" data-require-role="admin,secretary">إضافة عضو جديد</button>
+    <% } %>
+
+    <table>
+      <thead>
+        <tr>
+          <th>الاسم الكامل</th>
+          <th>الهاتف</th>
+          <th>البريد الإلكتروني</th>
+          <th>النوع</th>
+          <th>نوع العضوية</th>
+          <th>الحالة</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% members.forEach(member => { %>
+          <tr>
+            <td><%= member.fullName %></td>
+            <td><%= member.phone || "-" %></td>
+            <td><%= member.email || "-" %></td>
+            <td><%= member.gender %></td>
+            <td><%= member.memberType %></td>
+            <td><%= member.status %></td>
+            <td>
+              <% if (user && (user.role === 'admin' || user.role === 'secretary')) { %>
+                <button class="btn btn-edit" onclick="editMember('<%= member._id %>')">تعديل</button>
+              <% } else { %>
+                <button class="btn btn-edit" data-require-role="admin,secretary">تعديل</button>
+              <% } %>
+              <% if (user && user.role === 'admin') { %>
+                <button class="btn btn-delete" onclick="deleteMember('<%= member._id %>')">حذف</button>
+              <% } else { %>
+                <button class="btn btn-delete" data-require-role="admin">حذف</button>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+  <% /* templates holder - forms will be moved into modal when needed */ %>
+  <div id="formTemplates" style="display:none">
+      <form id="addForm" onsubmit="addMember(event)">
+      <h3>إضافة عضو جديد</h3>
+      <input type="text" name="fullName" placeholder="الاسم الكامل" required>
+      <input type="text" name="phone" placeholder="الهاتف">
+      <input type="email" name="email" placeholder="البريد الإلكتروني">
+      <select name="gender">
+        <option value="ذكر">ذكر</option>
+        <option value="أنثى">أنثى</option>
+      </select>
+      <select name="memberType">
+        <option value="bureau">أعضاء المكتب</option>
+        <option value="active">أعضاء عاملون</option>
+        <option value="sympathizer">متعاطفون</option>
+      </select>
+      <select name="status">
+        <option value="نشط">نشط</option>
+        <option value="غير نشط">غير نشط</option>
+      </select>
+      <button type="submit">إضافة العضو</button>
+      </form>
+
+      <!-- Edit form (hidden until editing) -->
+      <form id="editForm" onsubmit="updateMember(event)">
+        <h3>تعديل عضو</h3>
+        <input type="hidden" name="_id" />
+        <input type="text" name="fullName" placeholder="الاسم الكامل" required>
+        <input type="text" name="phone" placeholder="الهاتف">
+        <input type="email" name="email" placeholder="البريد الإلكتروني">
+        <select name="gender">
+          <option value="ذكر">ذكر</option>
+          <option value="أنثى">أنثى</option>
+        </select>
+        <select name="memberType">
+          <option value="bureau">أعضاء المكتب</option>
+          <option value="active">أعضاء عاملون</option>
+          <option value="sympathizer">متعاطفون</option>
+        </select>
+        <select name="status">
+          <option value="نشط">نشط</option>
+          <option value="غير نشط">غير نشط</option>
+        </select>
+        <div style="display:flex;gap:8px">
+          <button type="submit">حفظ التعديلات</button>
+          <button type="button" onclick="closeMemberEdit()" style="background:#ccc;color:#000;border:none;padding:10px;border-radius:4px">إلغاء</button>
+        </div>
+      </form>
+    </div>
+
+  <%- include('partials/modal') %>
+
+    <!-- forms moved into templates above and will be shown in modal -->
+
+      <%- include('partials/card-close') %>
+
+<script>
+// Modal-aware helpers for members
+function openMemberAdd(){
+  const form = document.getElementById('addForm');
+  if(!form) return alert('نموذج غير موجود');
+  document.getElementById('addModalTitle').textContent = 'إضافة عضو جديد';
+  document.getElementById('addModalBody').appendChild(form);
+  openModal('addModal');
+}
+function closeMemberAdd(){
+  const holder = document.getElementById('formTemplates');
+  const form = document.getElementById('addForm');
+  if(form && holder) holder.appendChild(form);
+  closeModal('addModal');
+}
+function closeMemberEdit(){
+  const holder = document.getElementById('formTemplates');
+  const form = document.getElementById('editForm');
+  if(form && holder) holder.appendChild(form);
+  closeModal('editModal');
+}
+
+async function addMember(e){
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  const r = await safeFetchJson('/api/members', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(data) });
+  if(r.ok) return location.reload();
+  alert(r.data && r.data.message ? r.data.message : 'حدث خطأ عند إضافة العضو');
+}
+
+async function deleteMember(id){
+  showConfirm('هل تريد حذف هذا العضو؟', async ()=>{
+    const r = await safeFetchJson('/api/members/' + id, { method: 'DELETE', credentials: 'same-origin' });
+    if(r.ok) location.reload();
+    else alert(r.data && r.data.message ? r.data.message : 'حدث خطأ عند الحذف');
+  });
+}
+
+function editMember(id){
+  (async () => {
+    try {
+      const r = await safeFetchJson('/api/members/' + id, { credentials: 'same-origin' });
+      if(!r.ok) return alert(r.data && r.data.message ? r.data.message : 'فشل في جلب بيانات العضو');
+      const member = r.data;
+      const form = document.getElementById('editForm');
+      form.querySelector('input[name="_id"]').value = member._id;
+      form.querySelector('input[name="fullName"]').value = member.fullName || '';
+      form.querySelector('input[name="phone"]').value = member.phone || '';
+      form.querySelector('input[name="email"]').value = member.email || '';
+      form.querySelector('select[name="gender"]').value = member.gender || 'ذكر';
+      form.querySelector('select[name="memberType"]').value = member.memberType || 'active';
+      form.querySelector('select[name="status"]').value = member.status || 'نشط';
+      document.getElementById('editModalTitle').textContent = 'تعديل عضو';
+      document.getElementById('editModalBody').appendChild(form);
+      openModal('editModal');
+    } catch (err) {
+      console.error(err);
+      alert('خطأ في الشبكة');
+    }
+  })();
+}
+
+async function updateMember(e){
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  const id = data._id; delete data._id;
+  try {
+    const r = await safeFetchJson('/api/members/' + id, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(data) });
+    if(!r.ok) return alert(r.data && r.data.message ? r.data.message : 'فشل في تحديث العضو');
+    location.reload();
+  } catch (err) {
+    console.error(err);
+    alert('خطأ في الشبكة');
+  }
+}
+</script>
+
+<%- include('partials/footer') %>

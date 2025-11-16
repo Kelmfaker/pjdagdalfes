@@ -1,0 +1,82 @@
+<%- include('partials/head', { title: 'تسجيل الحضور' }) %>
+<%- include('partials/header') %>
+
+  <%- include('partials/card-open', { title: 'تسجيل الحضور' }) %>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div><strong>تسجيل الحضور</strong></div>
+          <div><a href="/attendance/qr" class="btn" style="background:#28a745; text-decoration:none;">تسجيل عبر QR</a></div>
+        </div>
+
+        <label>اختر النشاط:</label>
+        <select id="activitySelect" onchange="loadMembers()">
+          <option value="">-- اختر النشاط --</option>
+          <% activities.forEach(a => { %>
+            <option value="<%= a._id %>"><%= a.title %> ( <%= new Date(a.date).toLocaleDateString('ar-MA') %> )</option>
+          <% }) %>
+        </select>
+
+        <form id="attendanceForm" style="display:none" onsubmit="saveAttendance(event)">
+          <table id="membersTable">
+            <thead>
+              <tr>
+                <th>العضو</th>
+                <th>حضور</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <button class="btn btn-save" type="submit">حفظ الحضور</button>
+        </form>
+  <%- include('partials/card-close') %>
+
+<script>
+async function loadMembers(){
+  const activityId = document.getElementById('activitySelect').value;
+  const form = document.getElementById('attendanceForm');
+  const tbody = document.querySelector('#membersTable tbody');
+  tbody.innerHTML = '';
+  if(!activityId){ form.style.display='none'; return; }
+
+  // جلب تفاصيل النشاط مع المكلفين
+  const resp = await safeFetchJson('/api/activities/' + activityId, { credentials: 'same-origin' });
+  if(!resp.ok){ alert("خطأ في جلب الأعضاء"); return; }
+  const activity = resp.data;
+  activity.responsible.forEach(member => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${member.fullName}</td>
+      <td>
+        <select name="presenceStatus">
+          <option value="present">حاضر</option>
+          <option value="absent">غائب</option>
+        </select>
+        <input type="hidden" name="memberId" value="${member._id}">
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  form.style.display='block';
+}
+
+async function saveAttendance(e){
+  e.preventDefault();
+  const form = e.target;
+  const activityId = document.getElementById('activitySelect').value;
+  const records = Array.from(form.querySelectorAll('tbody tr')).map(tr => ({
+    memberId: tr.querySelector('input[name="memberId"]').value,
+    presenceStatus: tr.querySelector('select[name="presenceStatus"]').value
+  }));
+
+  const r = await safeFetchJson('/attendance', {
+    method:'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ activityId, records })
+  });
+  if(r.ok) alert("تم حفظ الحضور بنجاح");
+  else alert((r.data && r.data.message) ? r.data.message : "حدث خطأ أثناء الحفظ");
+}
+</script>
+
+</body>
+</html>

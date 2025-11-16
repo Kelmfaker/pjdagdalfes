@@ -1,0 +1,99 @@
+<%- include('partials/head', { title: 'تسجيل الحضور عبر QR' }) %>
+<%- include('partials/header') %>
+
+  <%- include('partials/card-open', { title: 'تسجيل الحضور عبر QR' }) %>
+        <p class="note">اختر النشاط وادخل رقم العضوية أو اختر العضو ثم أدخل رمز الـ QR المطبوع في واقعة النشاط.</p>
+
+        <div>
+          <label>اختر النشاط</label>
+          <select id="activitySelect">
+            <option value="">-- اختر النشاط --</option>
+            <% activities.forEach(a=>{ %>
+              <option value="<%= a._id %>"><%= a.title %> — <%= new Date(a.date).toLocaleDateString('ar-MA') %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <div class="col">
+            <label>رقم العضوية (أو اترك فارغاً لاستخدام اختيار العضو)</label>
+            <input id="membershipId" placeholder="مثال: 102" />
+          </div>
+          <div class="col">
+            <label>عضو (اختياري)</label>
+            <select id="memberSelect"><option value="">-- اختيار عضو --</option></select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label>رمز الـ QR</label>
+          <input id="qrToken" placeholder="أدخل رمز الـ QR هنا" />
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:12px">
+          <button id="checkinBtn">تسجيل الحضور</button>
+          <button id="clearBtn" type="button">مسح الحقول</button>
+        </div>
+
+        <div id="result" style="margin-top:12px"></div>
+  <%- include('partials/card-close') %>
+
+  <script>
+    async function loadMembersForActivity(activityId){
+      const sel = document.getElementById('memberSelect');
+      sel.innerHTML = '<option value="">-- اختيار عضو --</option>';
+      if(!activityId) return;
+  const resp = await safeFetchJson('/api/activities/' + activityId, { credentials: 'same-origin' });
+  if(!resp.ok) return;
+  const activity = resp.data;
+      // if activity has responsible members, populate
+      const responsible = activity.responsible || [];
+      responsible.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m._id; opt.textContent = m.fullName + ' (' + (m.memberType || '') + ')';
+        sel.appendChild(opt);
+      });
+    }
+
+    document.getElementById('activitySelect').addEventListener('change', (e)=>{
+      loadMembersForActivity(e.target.value);
+    });
+
+    document.getElementById('checkinBtn').addEventListener('click', async ()=>{
+      const activityId = document.getElementById('activitySelect').value;
+      const membershipId = document.getElementById('membershipId').value.trim();
+      const memberId = document.getElementById('memberSelect').value;
+      const qrToken = document.getElementById('qrToken').value.trim();
+      const result = document.getElementById('result');
+      result.textContent = '';
+      if(!activityId || !qrToken || (!memberId && !membershipId)){
+        result.textContent = 'يرجى اختيار النشاط وادخال رمز QR وتحديد العضو أو رقم العضوية.'; return;
+      }
+
+      try{
+        const payload = { qrToken };
+        if(memberId) payload.memberId = memberId;
+        else payload.membershipId = membershipId;
+
+        const r = await safeFetchJson('/api/activities/' + activityId + '/checkin-qr', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if(!r.ok) result.textContent = (r.data && r.data.message) ? r.data.message : 'خطأ غير معروف';
+        else result.textContent = (r.data && r.data.message) ? r.data.message : 'تم التسجيل';
+      } catch(err){
+        result.textContent = err.message || 'خطأ في الشبكة';
+      }
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', ()=>{
+      document.getElementById('membershipId').value='';
+      document.getElementById('memberSelect').selectedIndex = 0;
+      document.getElementById('qrToken').value = '';
+      document.getElementById('result').textContent = '';
+    });
+  </script>
+</body>
+</html>
