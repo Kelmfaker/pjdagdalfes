@@ -25,5 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
     "nodemailer": "^7.0.10"
+    ,"serverless-http": "^3.0.0"
   }
 }
+
