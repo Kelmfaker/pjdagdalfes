@@ -26,9 +26,9 @@ router.get('/overview', authenticate, authorizeRoles('admin','secretary','respon
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const attendancesThisMonth = await Attendance.find({ recordedAt: { $gte: startOfMonth } });
-    const totalAttendances = attendancesThisMonth.length;
-    const presentCount = attendancesThisMonth.filter(a => a.presenceStatus === 'present').length;
+  // Avoid loading all attendance documents into memory (can be large) — use counts instead
+  const totalAttendances = await Attendance.countDocuments({ recordedAt: { $gte: startOfMonth } });
+  const presentCount = await Attendance.countDocuments({ recordedAt: { $gte: startOfMonth }, presenceStatus: 'present' });
     const attendanceRate = totalAttendances ? ((presentCount / totalAttendances) * 100).toFixed(1) : 0;
 
     res.json({
