@@ -9,9 +9,9 @@ export const login = async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+  if (!user) return res.status(400).json({ message: "بيانات اعتماد غير صحيحة" });
     const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) return res.status(400).json({ message: "Invalid credentials" });
+  if (!valid) return res.status(400).json({ message: "بيانات اعتماد غير صحيحة" });
   // ensure role is stored lowercased in the token for consistency
   const token = jwt.sign({ id: user._id, username: user.username, role: String(user.role).toLowerCase() }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
     // set httpOnly cookie for UI authentication as well
@@ -42,7 +42,7 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     res.clearCookie('token');
-    res.json({ message: 'Logged out' });
+    res.json({ message: 'تم تسجيل الخروج' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -52,13 +52,13 @@ export const logout = async (req, res) => {
 export const seedAdmin = async (req, res) => {
   try {
     const existing = await User.findOne({ role: 'admin' });
-    if (existing) return res.status(400).json({ message: 'Admin already exists' });
+  if (existing) return res.status(400).json({ message: 'المشرف موجود بالفعل' });
     const { username = 'admin', password = 'admin123' } = req.body;
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
     const user = new User({ username, passwordHash, role: 'admin' });
     await user.save();
-    res.status(201).json({ message: 'Admin user created', user: { id: user._id, username: user.username } });
+  res.status(201).json({ message: 'تم إنشاء حساب المشرف', user: { id: user._id, username: user.username } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -68,15 +68,15 @@ export const seedAdmin = async (req, res) => {
 export const register = async (req, res) => {
   try {
     const { username, password, name, email } = req.body;
-    if (!username || !password) return res.status(400).json({ message: 'username and password are required' });
+  if (!username || !password) return res.status(400).json({ message: 'اسم المستخدم وكلمة المرور مطلوبان' });
 
     const existing = await User.findOne({ username });
-    if (existing) return res.status(400).json({ message: 'Username already taken' });
+  if (existing) return res.status(400).json({ message: 'اسم المستخدم غير متاح' });
 
     const usersCount = await User.countDocuments();
     // Only allow public registration if there are no users yet (first user becomes admin).
     if (usersCount > 0) {
-      return res.status(403).json({ message: 'Registration is closed. Contact an administrator to create an account.' });
+  return res.status(403).json({ message: 'التسجيل مغلق. تواصل مع المسؤول لإنشاء حساب.' });
     }
     const role = 'admin';
 
@@ -91,7 +91,7 @@ export const register = async (req, res) => {
   const token = jwt.sign({ id: user._id, username: user.username, role: String(user.role).toLowerCase() }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
     // set cookie so browser UI can access protected pages without manual Authorization header
     res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: (1000 * 60 * 60 * 8) });
-  res.status(201).json({ message: 'User created', token, user: { id: user._id, username: user.username, role: String(user.role).toLowerCase() } });
+  res.status(201).json({ message: 'تم إنشاء المستخدم', token, user: { id: user._id, username: user.username, role: String(user.role).toLowerCase() } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -112,12 +112,12 @@ export const registerAllowed = async (req, res) => {
 export const requestPasswordReset = async (req, res) => {
   try {
     const { username } = req.body;
-    if (!username) return res.status(400).json({ message: 'username is required' });
+  if (!username) return res.status(400).json({ message: 'اسم المستخدم مطلوب' });
 
     const user = await User.findOne({ username });
     // Always respond with success message to avoid leaking existence of accounts
     if (!user) {
-      return res.json({ message: 'If an account exists for that username, a reset link has been sent.' });
+      return res.json({ message: 'إذا كان هناك حساب مرتبط باسم المستخدم هذا، فسيتم إرسال رابط إعادة التعيين.' });
     }
 
     // generate token
@@ -150,8 +150,8 @@ export const requestPasswordReset = async (req, res) => {
         const mailOptions = {
           from: fromAddress,
           to: toAddress,
-          subject: 'Password reset',
-          html: `<p>We received a request to reset your password. Click the link below to reset it (valid for 1 hour):</p><p><a href="${resetLink}">${resetLink}</a></p><p>If you did not request this, you can ignore this message.</p>`
+          subject: 'إعادة تعيين كلمة المرور',
+            html: `<p>تلقينا طلبًا لإعادة تعيين كلمة المرور. اضغط الرابط أدناه لإعادة التعيين (صالح لمدة ساعة):</p><p><a href="${resetLink}">${resetLink}</a></p><p>إذا لم تطلب هذا، فتجاهل هذه الرسالة.</p>`
         };
 
         await transporter.sendMail(mailOptions);
@@ -166,7 +166,7 @@ export const requestPasswordReset = async (req, res) => {
       console.log(`Reset link (fallback): ${resetLink}`);
     }
 
-    return res.json({ message: 'If an account exists for that username, a reset link has been sent.' });
+  return res.json({ message: 'إذا كان هناك حساب مرتبط باسم المستخدم هذا، فسيتم إرسال رابط إعادة التعيين.' });
   } catch (err) {
     console.error('requestPasswordReset error', err);
     res.status(500).json({ message: err.message });
@@ -177,13 +177,13 @@ export const requestPasswordReset = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { username, token, newPassword } = req.body;
-    if (!username || !token || !newPassword) return res.status(400).json({ message: 'username, token and newPassword are required' });
+  if (!username || !token || !newPassword) return res.status(400).json({ message: 'اسم المستخدم والرمز وكلمة المرور الجديدة مطلوبة' });
 
     const user = await User.findOne({ username, resetPasswordToken: token });
-    if (!user) return res.status(400).json({ message: 'Invalid token or username' });
+  if (!user) return res.status(400).json({ message: 'الرمز أو اسم المستخدم غير صالح' });
 
     if (!user.resetPasswordExpires || user.resetPasswordExpires.getTime() < Date.now()) {
-      return res.status(400).json({ message: 'Token has expired' });
+  return res.status(400).json({ message: 'انتهت صلاحية الرمز' });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -197,7 +197,7 @@ export const resetPassword = async (req, res) => {
   const jwtToken = jwt.sign({ id: user._id, username: user.username, role: String(user.role).toLowerCase() }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
     res.cookie('token', jwtToken, { httpOnly: true, sameSite: 'lax', maxAge: (1000 * 60 * 60 * 8) });
 
-    return res.json({ message: 'Password has been reset', token: jwtToken });
+  return res.json({ message: 'تم إعادة تعيين كلمة المرور', token: jwtToken });
   } catch (err) {
     console.error('resetPassword error', err);
     res.status(500).json({ message: err.message });

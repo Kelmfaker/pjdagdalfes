@@ -34,10 +34,20 @@ const activityRoutes = require('./routes/activities');
 const attendanceRoutes = require('./routes/attendance');
 const adminRoutes = require('./routes/admin');
 const setupRoutes = require('./routes/setup');
+const webRoutes = require('./routes/web');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+// parse form bodies for EJS pages
+app.use(express.urlencoded({ extended: true }));
+
+// setup EJS view engine for server-rendered management pages
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+// serve simple static assets for server-rendered pages (css/images)
+app.use('/static', express.static(path.join(__dirname, 'public')));
 
 // API routes
 // Setup routes (create admin) - mounted before auth so setup can run without token
@@ -47,6 +57,9 @@ app.use('/api/members', memberRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Web management routes (EJS rendered pages)
+app.use('/manage', webRoutes);
 
 // Basic health endpoint for the API
 app.get('/api/health', (req, res) => res.json({ ok: true, message: 'Membership and Activity Management API' }));

@@ -8,9 +8,18 @@ const memberSchema = new mongoose.Schema({
   email: { type: String, lowercase: true, trim: true },
   address: { type: String },
   dateOfBirth: { type: Date },
-  gender: { type: String, enum: ['M', 'F', 'other'], default: 'other' },
+  bio: { type: String },
+  gender: { type: String, enum: ['M', 'F'] },
+  educationLevel: { type: String, enum: ['none','primary','secondary','bachelor','master','phd','other'], default: 'other' },
+  occupation: { type: String, enum: ['unemployed','student','private','public','self_employed','retired','other'], default: 'other' },
   memberType: { type: String, enum: ['bureau', 'active', 'sympathizer'], required: true },
   role: { type: String }, // role if bureau member (e.g., president, treasurer)
+  pdfUrl: { type: String },
+  memberOfRegionalBodies: { type: Boolean, default: false },
+  memberOfRegionalBodiesDetail: { type: String },
+  assignedMission: { type: Boolean, default: false },
+  assignedMissionDetail: { type: String },
+  previousPartyExperiences: { type: String },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   joinedAt: { type: Date, default: Date.now }
 }, { timestamps: true });

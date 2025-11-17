@@ -11,7 +11,13 @@ router.use(authenticateJWT);
 // Create activity (Admin or Secretary)
 router.post('/', requireAnyRole('Admin','Secretary'), async (req, res) => {
 	try {
-		const a = new Activity(req.body);
+		// accept only allowed fields to avoid accidental injection
+		const { title, type, description, location, date, responsibles, status } = req.body;
+		const doc = { title, type, description, location, status };
+		if (date) doc.date = new Date(date);
+		if (Array.isArray(responsibles)) doc.responsibles = responsibles;
+
+		const a = new Activity(doc);
 		await a.save();
 		res.status(201).json(a);
 	} catch (err) {
@@ -25,21 +31,34 @@ router.get('/', async (req, res) => {
 	const filter = {};
 	if (q) filter.title = { $regex: q, $options: 'i' };
 	if (status) filter.status = status;
-	const items = await Activity.find(filter).sort({ date: 1 }).skip((page-1)*limit).limit(parseInt(limit)).populate('responsible');
+	const items = await Activity.find(filter)
+		.sort({ date: 1 })
+		.skip((page-1)*limit)
+		.limit(parseInt(limit))
+		.populate('responsibles');
 	res.json(items);
 });
 
 // Get by id
 router.get('/:id', async (req, res) => {
-	const a = await Activity.findById(req.params.id).populate('responsible');
+	const a = await Activity.findById(req.params.id).populate('responsibles');
 	if (!a) return res.status(404).json({ message: 'Not found' });
 	res.json(a);
 });
 
 // Update (Admin or Secretary)
 router.put('/:id', requireAnyRole('Admin','Secretary'), async (req, res) => {
-	const a = await Activity.findByIdAndUpdate(req.params.id, req.body, { new: true });
-	res.json(a);
+	try {
+		const { title, type, description, location, date, responsibles, status } = req.body;
+		const doc = { title, type, description, location, status };
+		if (date) doc.date = new Date(date);
+		if (Array.isArray(responsibles)) doc.responsibles = responsibles;
+
+		const a = await Activity.findByIdAndUpdate(req.params.id, doc, { new: true });
+		res.json(a);
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 });
 
 // Delete (Admin only)

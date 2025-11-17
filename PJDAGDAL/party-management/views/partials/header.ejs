@@ -85,31 +85,6 @@
     </div>
   </div>
 
-  <nav class="main-nav">
-    <div class="container">
-      <% if (user) { %>
-        <a href="/">لوحة التحكم</a>
-        <% if (user.role === 'admin' || user.role === 'secretary') { %>
-          <a href="/members">إدارة الأعضاء</a>
-        <% } %>
-        <% if (user.role === 'admin' || user.role === 'secretary' || user.role === 'responsible') { %>
-          <a href="/activities">إدارة الأنشطة</a>
-        <% } %>
-        <% if (user.role === 'admin' || user.role === 'secretary') { %>
-          <a href="/attendance">تسجيل الحضور</a>
-          <a href="/attendance-report">تقارير الحضور</a>
-        <% } %>
-        <% if (user.role === 'admin') { %>
-          <a href="/hundels">Hundel</a>
-          <a href="/audit-logs">سجل التغييرات</a>
-        <% } %>
-      <% } else { %>
-        <a href="/">الصفحة الرئيسية</a>
-      <% } %>
-    </div>
-  </nav>
-  
-
   <main>
     <div class="container">
       <script>

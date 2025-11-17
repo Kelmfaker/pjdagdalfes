@@ -97,3 +97,25 @@ router.post('/membership-ids/apply', async (req, res) => {
 
 module.exports = router;
 
+// Dashboard / stats endpoint (Admin only)
+// Returns simple metrics for the dashboard
+router.get('/stats', async (req, res) => {
+	try {
+		const totalMembers = await Member.countDocuments();
+		const activeMembers = await Member.countDocuments({ status: 'Active' });
+		const membersWithId = await Member.countDocuments({ membershipId: { $exists: true, $ne: '' } });
+		const totalActivities = await Activity.countDocuments();
+		const upcomingActivities = await Activity.countDocuments({ date: { $gte: new Date() } });
+		const totalAttendance = await require('../models/Attendance').countDocuments();
+		// Attendance today
+		const start = new Date(); start.setHours(0,0,0,0);
+		const end = new Date(); end.setHours(23,59,59,999);
+		const attendanceToday = await require('../models/Attendance').countDocuments({ recordedAt: { $gte: start, $lte: end } });
+
+		res.json({ totalMembers, activeMembers, membersWithId, totalActivities, upcomingActivities, totalAttendance, attendanceToday });
+	} catch (err) {
+		console.error('Error in /admin/stats', err);
+		res.status(500).json({ error: err.message });
+	}
+});
+

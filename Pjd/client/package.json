@@ -12,6 +12,8 @@
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.10",
     "@mui/material": "^5.14.10",
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0",
     "mam-system-root": "file:..",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

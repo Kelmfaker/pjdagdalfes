@@ -116,7 +116,7 @@ app.post('/login', async (req, res) => {
     await login(req, res);
   } catch (err) {
     console.error('Error handling /login POST', err);
-    res.status(500).send('Internal server error');
+    res.status(500).send('خطأ في الخادم');
   }
 });
 

@@ -21,12 +21,20 @@ router.get('/', async (req, res) => {
 // Mark attendance (create or update)
 router.post('/mark', async (req, res) => {
 	try {
-		const { activityId, memberId, status } = req.body;
+		const { activityId, memberId, present, method } = req.body;
 		if (!activityId || !memberId) return res.status(400).json({ message: 'activityId and memberId are required' });
+
+		const doc = {
+			present: typeof present === 'boolean' ? present : true,
+			method: method || 'manual',
+			recordedAt: new Date()
+		};
+		if (req.user && req.user.id) doc.recordedBy = req.user.id;
+
 		const rec = await Attendance.findOneAndUpdate(
 			{ activity: activityId, member: memberId },
-			{ status, recordedAt: new Date() },
-			{ upsert: true, new: true }
+			doc,
+			{ upsert: true, new: true, setDefaultsOnInsert: true }
 		);
 		res.json(rec);
 	} catch (err) {
@@ -41,10 +49,17 @@ router.post('/qr', async (req, res) => {
 		if (!activityId || !membershipId) return res.status(400).json({ message: 'activityId and membershipId required' });
 		const member = await Member.findOne({ membershipId });
 		if (!member) return res.status(404).json({ message: 'Member not found' });
+
+		const doc = {
+			present: true,
+			method: 'qr',
+			recordedAt: new Date()
+		};
+
 		const rec = await Attendance.findOneAndUpdate(
 			{ activity: activityId, member: member._id },
-			{ status: 'Present', recordedAt: new Date() },
-			{ upsert: true, new: true }
+			doc,
+			{ upsert: true, new: true, setDefaultsOnInsert: true }
 		);
 		res.json({ ok: true, record: rec, member: { id: member._id, fullName: member.fullName, membershipId: member.membershipId } });
 	} catch (err) {

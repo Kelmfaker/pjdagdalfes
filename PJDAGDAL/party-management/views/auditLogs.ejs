@@ -15,8 +15,8 @@
 
     async function load() {
       try {
-        const resp = await safeFetchJson('/audit/api', { credentials: 'same-origin' });
-        if (!resp.ok) { if (resp.status === 401) { location.href='/login' } document.getElementById('msg').textContent = (resp.data && resp.data.message) ? resp.data.message : 'Failed to load logs'; return; }
+  const resp = await safeFetchJson('/audit/api', { credentials: 'same-origin' });
+  if (!resp.ok) { if (resp.status === 401) { location.href='/login' } document.getElementById('msg').textContent = (resp.data && resp.data.message) ? resp.data.message : 'فشل في تحميل السجل'; return; }
         const data = resp.data;
         tbody.innerHTML = '';
         for (const l of data.data) {
@@ -24,7 +24,7 @@
           tr.innerHTML = `<td>${new Date(l.createdAt).toLocaleString()}</td><td>${l.actor?l.actor.username:'-'}</td><td>${l.action}</td><td>${l.resourceType}</td><td>${l.resourceId||''}</td><td><pre>${JSON.stringify(l.before||'')}</pre></td><td><pre>${JSON.stringify(l.after||'')}</pre></td>`;
           tbody.appendChild(tr);
         }
-      } catch (err) { console.error(err); document.getElementById('msg').textContent = 'Network error'; }
+  } catch (err) { console.error(err); document.getElementById('msg').textContent = 'خطأ بالشبكة'; }
     }
 
     load();

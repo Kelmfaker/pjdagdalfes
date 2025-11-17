@@ -40,7 +40,7 @@ router.get('/overview', authenticate, authorizeRoles('admin','secretary','respon
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to load overview' });
+    res.status(500).json({ message: 'فشل في تحميل ملخص لوحة التحكم' });
   }
 });
 
@@ -59,7 +59,7 @@ router.post('/admin/regenerate-all-qr', authenticate, authorizeRoles('admin'), a
     res.json({ message: 'تم تجديد رموز QR لجميع الأنشطة', count: updated.length, updated });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to regenerate QR tokens' });
+    res.status(500).json({ message: 'فشل في تجديد رموز QR' });
   }
 });
 
@@ -77,7 +77,7 @@ router.post('/admin/clear-attendance', authenticate, authorizeRoles('admin'), as
     res.json({ message: 'تم حذف سجلات الحضور', deletedCount: result.deletedCount });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to clear attendance' });
+    res.status(500).json({ message: 'فشل في مسح سجلات الحضور' });
   }
 });
 
@@ -90,7 +90,7 @@ router.get('/admin/export', authenticate, authorizeRoles('admin'), async (req, r
     res.json({ members, activities, attendances });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to export data' });
+    res.status(500).json({ message: 'فشل في تصدير البيانات' });
   }
 });
 

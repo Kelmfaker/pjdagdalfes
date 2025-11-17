@@ -11,7 +11,7 @@ export const authenticate = (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ message: "Authentication required" });
+    return res.status(401).json({ message: "مطلوب تسجيل الدخول" });
   }
 
   try {
@@ -21,14 +21,14 @@ export const authenticate = (req, res, next) => {
     req.user = payload;
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ message: "الرمز غير صالح أو منتهي الصلاحية" });
   }
 };
 
 export const authorizeRoles = (...roles) => (req, res, next) => {
-  if (!req.user) return res.status(401).json({ message: "Authentication required" });
+  if (!req.user) return res.status(401).json({ message: "مطلوب تسجيل الدخول" });
   const allowed = roles.map(r => String(r).toLowerCase());
   const userRole = String(req.user.role || '').toLowerCase();
-  if (!allowed.includes(userRole)) return res.status(403).json({ message: "Forbidden" });
+  if (!allowed.includes(userRole)) return res.status(403).json({ message: "ممنوع" });
   next();
 };
