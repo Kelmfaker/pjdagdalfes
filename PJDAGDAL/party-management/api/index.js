@@ -21,6 +21,7 @@ import exportRoutes from '../routes/export.js';
 import hundelRoutes from '../routes/hundels.js';
 import hundelAdminRoutes from '../routes/hundelAdmin.js';
 import auditRoutes from '../routes/audit.js';
+import uploadRoutes from '../routes/uploads.js';
 import uiAuth from '../middlewares/uiAuth.js';
 import uiAdmin from '../middlewares/uiAdmin.js';
 import attachUser from '../middlewares/attachUser.js';
@@ -54,6 +55,7 @@ app.use('/api/activities', activityRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/uploads', uploadRoutes);
 app.use('/api/hundels', hundelRoutes);
 
 // UI routes

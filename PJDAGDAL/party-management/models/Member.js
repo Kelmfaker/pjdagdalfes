@@ -6,6 +6,7 @@ const memberSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   phone: { type: String },
   email: { type: String, lowercase: true, trim: true },
+  cin: { type: String, unique: true, sparse: true, index: true, trim: true },
   address: { type: String },
   dateOfBirth: { type: Date },
   bio: { type: String },

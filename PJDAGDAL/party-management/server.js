@@ -21,6 +21,7 @@ import exportRoutes from "./routes/export.js";
 import hundelRoutes from "./routes/hundels.js";
 import hundelAdminRoutes from "./routes/hundelAdmin.js";
 import auditRoutes from "./routes/audit.js";
+import uploadRoutes from "./routes/uploads.js";
 import uiAuth from "./middlewares/uiAuth.js";
 import uiAdmin from "./middlewares/uiAdmin.js";
 import attachUser from "./middlewares/attachUser.js";
@@ -106,6 +107,7 @@ console.log('Registered direct auth fallback routes');
 // Additional convenience route
 app.get('/register-allowed', async (req, res) => registerAllowed(req, res));
 app.use("/api/export", exportRoutes);
+app.use('/api/uploads', uploadRoutes);
 // Hundel resource routes
 app.use('/api/hundels', hundelRoutes);
 

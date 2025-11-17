@@ -35,12 +35,19 @@ function normalizeMemberInput(input = {}) {
   
     // trim common text fields
     if (payload.fullName && typeof payload.fullName === 'string') payload.fullName = payload.fullName.trim();
-    if (payload.phone && typeof payload.phone === 'string') payload.phone = payload.phone.trim();
+    if (payload.phone && typeof payload.phone === 'string') {
+      // normalize phone by removing spaces, dashes and parentheses
+      payload.phone = payload.phone.replace(/[\s\-()]+/g, '').trim();
+    }
     if (payload.email && typeof payload.email === 'string') payload.email = payload.email.trim();
     if (payload.address && typeof payload.address === 'string') payload.address = payload.address.trim();
     if (payload.role && typeof payload.role === 'string') payload.role = payload.role.trim();
     if (payload.bio && typeof payload.bio === 'string') payload.bio = payload.bio.trim();
     if (payload.pdfUrl && typeof payload.pdfUrl === 'string') payload.pdfUrl = payload.pdfUrl.trim();
+    if (payload.cin && typeof payload.cin === 'string') {
+      // national ID: normalize by trimming and uppercasing to reduce duplicates
+      payload.cin = payload.cin.trim().toUpperCase();
+    }
     // educationLevel and occupation should be canonical codes; trim if present
     if (payload.educationLevel && typeof payload.educationLevel === 'string') payload.educationLevel = payload.educationLevel.trim();
     if (payload.occupation && typeof payload.occupation === 'string') payload.occupation = payload.occupation.trim();
@@ -125,6 +132,34 @@ export const deleteMember = async (req, res) => {
     if (!member) return res.status(404).json({ message: "العضو غير موجود" });
     await logAudit(req, 'delete', 'Member', member._id, member.toObject(), null);
     res.json({ message: "تم حذف العضو بنجاح" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Bulk delete members. Supports optional filters via query params.
+// To delete all members: DELETE /api/members?confirm=true
+// To delete filtered members: DELETE /api/members?memberType=active&status=inactive&beforeJoined=2023-01-01
+export const deleteMembers = async (req, res) => {
+  try {
+    const { confirm } = req.query;
+    const filters = {};
+    if (req.query.memberType) filters.memberType = req.query.memberType;
+    if (req.query.status) filters.status = req.query.status;
+    if (req.query.beforeJoined) {
+      const d = new Date(req.query.beforeJoined);
+      if (!isNaN(d)) filters.joinedAt = { $lt: d };
+    }
+
+    if (!confirm && Object.keys(filters).length === 0) {
+      return res.status(400).json({ message: 'Specify at least one filter or set confirm=true to delete all members.' });
+    }
+
+    // perform delete
+    const result = await Member.deleteMany(filters);
+    // audit the action with filter summary
+    await logAudit(req, 'delete', 'MemberBulk', null, { filters }, { deletedCount: result.deletedCount });
+    res.json({ message: 'Bulk delete completed', deletedCount: result.deletedCount });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
