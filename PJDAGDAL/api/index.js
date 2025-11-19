@@ -72,6 +72,29 @@ app.use('/audit-logs', uiAdmin, auditRoutes);
 app.post('/login', async (req, res) => { try { await login(req, res); } catch (err) { console.error(err); res.status(500).send('Internal server error'); } });
 app.get('/api/auth/me', async (req, res) => { try { /* middleware authenticate not wired here; rely on attachUser */ res.json({ user: req.user }); } catch (err) { res.status(500).json({ message: err.message }); } });
 
+// Debug: list registered routes
+app.get('/__routes', (req, res) => {
+  try {
+    const routes = [];
+    if (!app._router) return res.json(routes);
+    app._router.stack.forEach((layer) => {
+      if (layer.route && layer.route.path) {
+        routes.push({ path: layer.route.path, methods: Object.keys(layer.route.methods) });
+      } else if (layer.name === 'router' && layer.handle && layer.handle.stack) {
+        // nested router
+        layer.handle.stack.forEach((l) => {
+          if (l.route && l.route.path) {
+            routes.push({ path: l.route.path, methods: Object.keys(l.route.methods) });
+          }
+        });
+      }
+    });
+    res.json(routes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Connect to MongoDB (reuse connection across invocations)
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 if (!mongoUri) console.warn('No MongoDB URI provided in environment for Vercel deployment');
