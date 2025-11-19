@@ -36,6 +36,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set('view engine', 'ejs');
 
+// Log incoming requests (useful for Vercel runtime debugging)
+app.use((req, res, next) => {
+  try {
+    console.log(`[req] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+  } catch (e) { /* ignore logging errors */ }
+  next();
+});
+
 // Attach user middleware
 app.use(attachUser);
 
@@ -93,6 +101,14 @@ app.get('/__routes', (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+// 404 handler: log and return JSON so Vercel logs capture missing paths
+app.use((req, res) => {
+  const msg = `404 Not Found: ${req.method} ${req.originalUrl}`;
+  console.warn(msg);
+  // include a minimal JSON payload to help debugging remote NOT_FOUND errors
+  res.status(404).json({ message: 'Not Found', path: req.originalUrl });
 });
 
 // Connect to MongoDB (reuse connection across invocations)
