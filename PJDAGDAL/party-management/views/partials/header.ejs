@@ -18,6 +18,10 @@
     <div class="container inner">
       <% const role = (user && user.role) ? String(user.role).toLowerCase() : ''; %>
       <div class="brand">
+        <!-- Logo: place your image at public/images/logo.png and it will be served at /static/images/logo.png -->
+        <div style="display:flex;align-items:center;margin-right:8px;background-color:#fff;border:1px solid #fff;padding:8px;border-radius: 20px;">
+          <img src="../../public/images/logo.png" alt="logo" style="height:48px;display:block" onerror="this.onerror=null;this.src='/static/images/logo.png'" />
+        </div>
         <div class="avatar">
           <% if (user && (user.name || user.username)) { %>
             <%= (user.name || user.username).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() %>
@@ -49,9 +53,10 @@
                 <button id="adminDropdownBtn" style="background:rgba(255,255,255,0.06);color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer">لوحة المدير ▾</button>
                 <div id="adminDropdown" style="display:none;position:absolute;right:0;top:36px;background:#fff;color:#000;padding:8px;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,0.12);min-width:200px;z-index:50">
                   <div style="display:flex;flex-direction:column;gap:6px">
-                    <button onclick="location.href='/admin'" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer">لوحة التحكم</button>
-                    <button onclick="location.href='/members'" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer">إدارة الأعضاء</button>
-                    <button onclick="location.href='/activities'" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer">إدارة الأنشطة</button>
+                    <button onclick="location.href='/'" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer;color:#2d7bf6">لوحة التحكم</button>
+                    <button onclick="location.href='/members'" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer;color:#2d7bf6">إدارة الأعضاء</button>
+                    <button onclick="location.href='/activities'" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer;color:#2d7bf6">إدارة الأنشطة</button>
+                    <button onclick="location.href='/users'" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer;color:#2d7bf6">إدارة المسؤولين</button>
                     <hr style="margin:6px 0;border:none;border-top:1px solid #eee" />
                     <button id="regenAllQrBtn" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer;color:#28a745">تجديد جميع رموز QR</button>
                     <button id="clearAttendanceBtn" style="text-align:right;padding:6px;border:none;background:transparent;cursor:pointer;color:#e67e22">مسح الحضور</button>

@@ -16,8 +16,16 @@ export const authenticate = (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    // normalize role to lowercase for consistent checks across server and templates
-    if (payload && payload.role) payload.role = String(payload.role).toLowerCase();
+    // normalize role to lowercase/trim for consistent checks across server and templates
+    if (payload && payload.role) {
+      const normalize = (x) => {
+        if (!x) return '';
+        let s = String(x).trim().toLowerCase();
+        if (s === 'responsable') s = 'responsible';
+        return s;
+      };
+      payload.role = normalize(payload.role);
+    }
     req.user = payload;
     next();
   } catch (err) {
@@ -27,8 +35,14 @@ export const authenticate = (req, res, next) => {
 
 export const authorizeRoles = (...roles) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: "مطلوب تسجيل الدخول" });
-  const allowed = roles.map(r => String(r).toLowerCase());
-  const userRole = String(req.user.role || '').toLowerCase();
+  const normalize = (x) => {
+    if (!x) return '';
+    let s = String(x).trim().toLowerCase();
+    if (s === 'responsable') s = 'responsible';
+    return s;
+  };
+  const allowed = roles.map(r => normalize(r));
+  const userRole = normalize(req.user.role || '');
   if (!allowed.includes(userRole)) return res.status(403).json({ message: "ممنوع" });
   next();
 };

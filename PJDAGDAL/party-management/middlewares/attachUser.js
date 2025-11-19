@@ -17,7 +17,12 @@ export default function attachUser(req, res, next) {
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     // normalize role to lowercase for consistent template rendering and client-side checks
-    if (payload && payload.role) payload.role = String(payload.role).toLowerCase();
+    if (payload && payload.role) {
+      let r = String(payload.role).toLowerCase();
+      // common synonyms: some accounts use 'responsable' spelling — normalize to 'responsible'
+      if (r === 'responsable') r = 'responsible';
+      payload.role = r;
+    }
     req.user = payload;
     res.locals.user = payload;
     return next();

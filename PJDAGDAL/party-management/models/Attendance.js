@@ -5,6 +5,7 @@ const attendanceSchema = new mongoose.Schema({
   activityId: { type: mongoose.Schema.Types.ObjectId, ref: 'Activity', required: true },
   presenceStatus: { type: String, enum: ['present', 'absent'], required: true },
   recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  comment: { type: String },
   recordedAt: { type: Date, default: Date.now },
   method: { type: String, enum: ['manual', 'qr'], default: 'manual' }
 }, { timestamps: true });

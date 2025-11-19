@@ -5,7 +5,8 @@ import { authenticate, authorizeRoles } from "../middlewares/auth.js";
 const router = express.Router();
 
 // عرض صفحة الأعضاء
-router.get("/", authenticate, authorizeRoles("admin", "secretary"), async (req, res) => {
+// Allow viewers and responsible users to view the members page (read-only)
+router.get("/", authenticate, authorizeRoles("admin", "secretary", "responsible", "viewer"), async (req, res) => {
   try {
   // Pagination params
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);

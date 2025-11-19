@@ -101,7 +101,7 @@ export const checkInByQr = async (req, res) => {
     const before = await Attendance.findOne({ memberId: member._id, activityId }).lean();
     const attendance = await Attendance.findOneAndUpdate(
       { memberId: member._id, activityId },
-      { memberId: member._id, activityId, presenceStatus },
+      { memberId: member._id, activityId, presenceStatus, method: 'qr', recordedBy: req.user && req.user._id ? req.user._id : undefined, recordedAt: new Date() },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
@@ -134,5 +134,21 @@ export const regenerateQrToken = async (req, res) => {
   } catch (err) {
     console.error('regenerateQrToken error', err);
     res.status(500).json({ message: err.message });
+  }
+};
+
+// Render a dedicated attendance page for an activity (UI)
+export const renderActivityAttendancePage = async (req, res) => {
+  try {
+    const activityId = req.params.id;
+    const activity = await Activity.findById(activityId).populate('responsible', 'fullName memberType');
+    if (!activity) return res.status(404).send('النشاط غير موجود');
+
+    const attendance = await Attendance.find({ activityId }).populate('memberId', 'fullName membershipId memberType').populate('recordedBy', 'username');
+
+    res.render('activity-attendance', { activity, attendance });
+  } catch (err) {
+    console.error('Failed to render activity attendance page', err);
+    res.status(500).send('خطأ في تحميل لائحة الحضور للنشاط');
   }
 };

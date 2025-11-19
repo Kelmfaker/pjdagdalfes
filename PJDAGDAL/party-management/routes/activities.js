@@ -8,6 +8,7 @@ import {
   ,checkInByQr
   ,regenerateQrToken
 } from "../controllers/activitiesController.js";
+import { renderActivityAttendancePage } from '../controllers/activitiesController.js';
 import { authenticate, authorizeRoles } from "../middlewares/auth.js";
 
 const router = express.Router();
@@ -21,5 +22,8 @@ router.post("/:id/checkin-qr", authenticate, authorizeRoles('admin','secretary',
 // Regenerate QR token for printing/printing a QR
 router.post('/:id/qr-regenerate', authenticate, authorizeRoles('admin','secretary'), regenerateQrToken);
 router.delete("/:id", authenticate, authorizeRoles('admin'), deleteActivity);     // حذف نشاط (Admin فقط)
+
+// صفحة لائحة الحضور الخاصة بنشاط
+router.get('/:id/attendance', authenticate, authorizeRoles('admin','secretary','responsible','viewer'), renderActivityAttendancePage);
 
 export default router;

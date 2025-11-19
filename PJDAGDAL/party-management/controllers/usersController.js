@@ -67,3 +67,50 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// تحديث بيانات مستخدم (role أو كلمة المرور) - Admin only
+export const updateUser = async (req, res) => {
+  try {
+    const { role, password, name, email } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+    const before = user.toObject();
+    if (typeof role !== 'undefined') user.role = role;
+    if (typeof name !== 'undefined') user.name = name;
+    if (typeof email !== 'undefined') user.email = email;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      user.passwordHash = await bcrypt.hash(password, salt);
+    }
+    await user.save();
+    await logAudit(req, 'update', 'User', user._id, before, user.toObject());
+    res.json({ message: 'تم تحديث المستخدم', user: { _id: user._id, username: user.username, role: user.role, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Link a User to a Member record (Admin only)
+export const linkUserToMember = async (req, res) => {
+  try {
+    const { memberId, membershipId, email } = req.body || {};
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'المستخدم غير موجود' });
+
+    // find the member by one of the provided selectors
+    let member = null;
+    if (memberId) member = await (await import('../models/Member.js')).default.findById(memberId);
+    if (!member && membershipId) member = await (await import('../models/Member.js')).default.findOne({ membershipId: Number(membershipId) });
+    if (!member && email) member = await (await import('../models/Member.js')).default.findOne({ email: String(email).toLowerCase().trim() });
+
+    if (!member) return res.status(404).json({ message: 'لم يتم العثور على العضو المطابق' });
+
+    const before = user.toObject();
+    user.member = member._id;
+    await user.save();
+    await logAudit(req, 'update', 'User', user._id, before, user.toObject());
+    res.json({ message: 'تم ربط المستخدم بالعضو', user: { _id: user._id, username: user.username, member: user.member } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

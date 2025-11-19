@@ -6,9 +6,16 @@ import { logAudit } from '../utils/audit.js';
 // عرض كل سجلات الحضور
 export const getAllAttendances = async (req, res) => {
   try {
-    const attendances = await Attendance.find()
+    // Support optional query filters for activityId and memberId to allow
+    // fetching attendances for a specific activity or member.
+    const filter = {};
+    if (req.query.activityId) filter.activityId = req.query.activityId;
+    if (req.query.memberId) filter.memberId = req.query.memberId;
+
+    const attendances = await Attendance.find(filter)
       .populate("memberId", "fullName memberType")
-      .populate("activityId", "title date");
+      .populate("activityId", "title date")
+      .populate("recordedBy", "username");
     res.json(attendances);
   } catch (err) {
     res.status(500).json({ message: err.message });

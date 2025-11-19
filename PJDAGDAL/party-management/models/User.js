@@ -11,6 +11,9 @@ const userSchema = new mongoose.Schema({
   // For password reset flow
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date }
+  ,
+  // optional link to a Member document for responsible accounts
+  member: { type: mongoose.Schema.Types.ObjectId, ref: 'Member' }
 });
 
 userSchema.methods.isValidPassword = async function(password) {

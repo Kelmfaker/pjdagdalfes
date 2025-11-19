@@ -89,6 +89,9 @@ router.post('/members-import', upload.single('file'), async (req, res) => {
 
   const results = { created: 0, updated: 0, failed: 0, errors: [] };
 
+    // import mode: 'upsert' (default) | 'append' | 'skip'
+    const mode = (req.body && req.body.mode) ? String(req.body.mode).toLowerCase() : (req.query.mode || 'upsert');
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const payload = mapRowToMember(row);
@@ -125,18 +128,30 @@ router.post('/members-import', upload.single('file'), async (req, res) => {
         }
       // Attempt upsert: match by membershipId -> email -> phone -> fullname (case-insensitive)
       try {
-    let existing = null;
-    if (payload.membershipId) existing = await Member.findOne({ membershipId: payload.membershipId });
-    if (!existing && payload.cin) existing = await Member.findOne({ cin: payload.cin });
-    if (!existing && payload.email) existing = await Member.findOne({ email: ('' + payload.email).toLowerCase().trim() });
-    if (!existing && payload.phone) existing = await Member.findOne({ phone: '' + payload.phone });
-        if (!existing && payload.fullName) {
-          // case-insensitive exact match
-          const esc = payload.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          existing = await Member.findOne({ fullName: { $regex: `^${esc}$`, $options: 'i' } });
+        let existing = null;
+
+        if (mode === 'append') {
+          // force create new member (do not search for existing). Note: unique index conflicts may still occur.
+          existing = null;
+        } else {
+          // default/upsert/skip: search for existing by membershipId, cin, email, phone, fullname
+          if (payload.membershipId) existing = await Member.findOne({ membershipId: payload.membershipId });
+          if (!existing && payload.cin) existing = await Member.findOne({ cin: payload.cin });
+          if (!existing && payload.email) existing = await Member.findOne({ email: ('' + payload.email).toLowerCase().trim() });
+          if (!existing && payload.phone) existing = await Member.findOne({ phone: '' + payload.phone });
+          if (!existing && payload.fullName) {
+            // case-insensitive exact match
+            const esc = payload.fullName.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+            existing = await Member.findOne({ fullName: { $regex: `^${esc}$`, $options: 'i' } });
+          }
         }
 
         if (existing) {
+          if (mode === 'skip') {
+            // don't update; count as skipped
+            results.errors.push({ row: i + 1, message: 'Skipped existing member (mode=skip)' });
+            continue;
+          }
           const before = existing.toObject();
           // merge fields from payload (prefer non-empty values)
           const updates = {};

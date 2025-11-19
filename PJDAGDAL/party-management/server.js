@@ -26,6 +26,7 @@ import uiAuth from "./middlewares/uiAuth.js";
 import uiAdmin from "./middlewares/uiAdmin.js";
 import attachUser from "./middlewares/attachUser.js";
 import { authenticate } from "./middlewares/auth.js";
+import path from 'path';
 
 
 
@@ -37,6 +38,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set('view engine', 'ejs');
+
+// Serve static assets from /public at /static
+app.use('/static', express.static(path.join(process.cwd(), 'public')));
 
 // Attach user to req and res.locals when a valid token exists (non-intrusive)
 app.use(attachUser);
@@ -140,10 +144,13 @@ app.use("/members", memberDashboardRoutes);
 app.use("/activities", activityDashboardRoutes);
 app.use("/attendance", attendanceDashboardRoutes);
 app.use("/attendance-report", attendanceReportRoutes);
+import userDashboardRoutes from './routes/userDashboard.js';
 
 // Protected UI pages that require admin role
 app.use('/hundels', uiAdmin, hundelAdminRoutes);
 app.use('/audit-logs', uiAdmin, auditRoutes);
+// Admin user management UI
+app.use('/users', uiAdmin, userDashboardRoutes);
 
 
 // Start the server after successful MongoDB connection
@@ -161,5 +168,22 @@ app.get('/__routes', (req, res) => {
     res.json(routes);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Temporary debug endpoint: return the authenticated user's payload and request cookies/headers.
+// Protected by `authenticate` to avoid leaking info to unauthenticated callers.
+import { authenticate as _authenticate } from './middlewares/auth.js';
+app.get('/__debug/me', _authenticate, (req, res) => {
+  try {
+    const info = {
+      user: req.user || null,
+      cookies: req.headers.cookie || null,
+      authorization: req.headers.authorization || null,
+      path: req.originalUrl
+    };
+    res.json({ ok: true, info });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err && err.message ? err.message : 'error' });
   }
 });
