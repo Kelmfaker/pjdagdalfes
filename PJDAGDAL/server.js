@@ -27,6 +27,7 @@ import uiAdmin from "./middlewares/uiAdmin.js";
 import attachUser from "./middlewares/attachUser.js";
 import { authenticate } from "./middlewares/auth.js";
 import path from 'path';
+import { connectToDatabase } from './lib/mongoose.js';
 
 
 
@@ -213,3 +214,10 @@ app.get('/__debug/me', _authenticate, (req, res) => {
     res.status(500).json({ ok: false, message: err && err.message ? err.message : 'error' });
   }
 });
+
+await connectToDatabase();
+// log like: console.log('MongoDB connected (serverless)');
+
+const t0 = Date.now();
+const result = await MyModel.find(...).exec();
+console.log('members.find took', Date.now() - t0, 'ms');
