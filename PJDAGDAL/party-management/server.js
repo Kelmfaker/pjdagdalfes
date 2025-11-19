@@ -45,6 +45,32 @@ app.use('/static', express.static(path.join(process.cwd(), 'public')));
 // Attach user to req and res.locals when a valid token exists (non-intrusive)
 app.use(attachUser);
 
+// Content Security Policy: allow same-origin resources and local connections
+// This sets a reasonable default while permitting devtools / local fetches to /.well-known/*
+// Make the policy configurable through the `CSP_DIRECTIVES` environment variable.
+app.use((req, res, next) => {
+  const envDirectives = process.env.CSP_DIRECTIVES;
+  if (envDirectives && String(envDirectives).trim()) {
+    // Use environment-provided directives verbatim — allows production to lock down CSP.
+    res.setHeader('Content-Security-Policy', String(envDirectives).trim());
+    res.setHeader('X-CSP-Source', 'env');
+    return next();
+  }
+
+  // Development-friendly default that allows same-origin and localhost connections.
+  const directives = [
+    "default-src 'self'",
+    "connect-src 'self' http://localhost:5000 http://127.0.0.1:5000 ws://localhost:5000",
+    "img-src 'self' data:",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:"
+  ].join('; ');
+  res.setHeader('Content-Security-Policy', directives);
+  res.setHeader('X-CSP-Source', 'default');
+  next();
+});
+
 // Rate limiter for auth endpoints (login) to slow brute-force attacks
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

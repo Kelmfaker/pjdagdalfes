@@ -2,6 +2,7 @@ import express from "express";
 import Activity from "../models/Activity.js";
 import Member from "../models/Member.js";
 import { authenticate, authorizeRoles } from "../middlewares/auth.js";
+import { renderActivityAttendancePage } from "../controllers/activitiesController.js";
 
 const router = express.Router();
 
@@ -47,5 +48,8 @@ router.get("/", authenticate, authorizeRoles("admin", "secretary", "responsible"
     res.status(500).send("خطأ في تحميل الأنشطة");
   }
 });
+
+  // صفحـة لائحة الحضور لنشاط معين (UI)
+  router.get('/:id/attendance', authenticate, authorizeRoles('admin','secretary','responsible','viewer'), renderActivityAttendancePage);
 
 export default router;
